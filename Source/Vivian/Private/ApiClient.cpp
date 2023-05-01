@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "ApiClient.h"
 
-
 UApiClient::UApiClient(const FObjectInitializer& ObjectInitializer)
     : UUserWidget(ObjectInitializer)
 {
@@ -23,15 +22,39 @@ void UApiClient::MakeAPIRequest()
     // Set the callback function to handle the response
     Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::HandleAPIResponse);
     // Set the URL of the API endpoint you want to call
-    FString URL = "https://pokeapi.co/api/v2/pokemon/" + InputText;
+    FString URL = "https://api.openai.com/v1/chat/completions";
     Request->SetURL(URL);
 
     // Set the HTTP verb (such as GET, POST, PUT, DELETE)
-    Request->SetVerb("GET");
+    Request->SetVerb("POST");
 
     // Set any headers or parameters needed for the request
     Request->SetHeader("User-Agent", "X-UnrealEngine-Agent");
-    Request->SetHeader("Content-Type", "application/json;q=0.9,text/plain");
+    Request->SetHeader("Content-Type", "application/json"); //;q=0.9,text/plain
+    Request->SetHeader("Authorization", "Bearer " + ApiKey);
+
+    // create a JSON object
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+
+    // Add the "model" key-value pair to the JSON object
+    JsonObject->SetStringField("model", "gpt-3.5-turbo");
+
+    // Create a new JSON array for the "messages" key-value pair
+    TArray<TSharedPtr<FJsonValue>> MessagesArray;
+
+    TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
+    MessageObject->SetStringField("role", "user");
+    MessageObject->SetStringField("content", InputText);
+    MessagesArray.Add(MakeShareable(new FJsonValueObject(MessageObject)));
+    // Add the JSON array to the JSON object
+    JsonObject->SetArrayField("messages", MessagesArray);
+
+    // convert the JSON object to a string
+    FString JsonString;
+    TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+    FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
+    // Set the content of the request
+    Request->SetContent(TArray<uint8>((const uint8*)TCHAR_TO_UTF8(*JsonString), JsonString.Len()));
 
     // Send the HTTP request
     Request->ProcessRequest();

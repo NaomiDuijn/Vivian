@@ -13,8 +13,8 @@
 /**
  * 
  */
-
-UCLASS()
+// Use the Game config file to read the API key
+UCLASS(Config=Game)
 class VIVIAN_API UApiClient : public UUserWidget
 {
     GENERATED_BODY()
@@ -40,4 +40,7 @@ private:
     FHttpModule* Http;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Private", meta= (AllowPrivateAccess = "true"))
     FString InputText;
+    // Read the API key from the config file
+    UPROPERTY(Config)
+    FString ApiKey;
 };
