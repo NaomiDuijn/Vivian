@@ -60,27 +60,55 @@ void UApiClient::MakeAPIRequest()
     Request->ProcessRequest();
 }
 
+
 void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
 {
-    // Create the JsonObject
-    TSharedPtr <FJsonObject> JsonObject;
     // Check if the request was successful
     if (bSuccess && Response.IsValid() && Response->GetResponseCode() == EHttpResponseCodes::Ok)
     {
         // Get the response body as a string
-        const FString ResponseBody = Response->GetContentAsString();
+        FString ResponseBody = Response->GetContentAsString();
+
+        // Create a new Json Object
+        TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+
         // Create a reader for the response body
-        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseBody);
+        TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(ResponseBody);
 
-        // Check is reading is succesful
-        if (FJsonSerializer::Deserialize(Reader, JsonObject))
+        // Check if reading is succesful
+        if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
         {
-            // Parse the response and do something with the data
-        }
+            // Log the JSON object as a string
+            FString JsonObjectString;
+            TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonObjectString);
+            FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
 
-        // Print the response body to the console for debugging
-        UE_LOG(LogTemp, Warning, TEXT("API response body: %s"), *ResponseBody);
-        UApiClient::SetResponseText(ResponseBody);
+            // Extract the "choices" array from the JSON object
+            const TArray<TSharedPtr<FJsonValue>>* ChoicesArray = nullptr;
+
+            // Check if the "choices" key exists in the JSON object
+            if (JsonObject->TryGetArrayField("choices", ChoicesArray) && ChoicesArray->Num() > 0)
+            {
+                TSharedPtr<FJsonObject> FirstChoiceObject = (*ChoicesArray)[0]->AsObject();
+                TSharedPtr<FJsonObject> MessageObject = FirstChoiceObject->GetObjectField("message");
+
+                FString Role;
+                FString Content;
+                // Check if the "role" and "content" keys exist in the JSON object
+                if (MessageObject->TryGetStringField("role", Role) && MessageObject->TryGetStringField("content", Content))
+                {
+                    UE_LOG(LogTemp, Display, TEXT("Role: %s, Content: %s"), *Role, *Content);
+                    // Set the response text to the "content" value
+                    UApiClient::SetResponseText(Content);
+                }
+            }
+            // If the "choices" key does not exist in the JSON object
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("No choices array found"));
+            }
+
+        }
     }
     else
     {
@@ -92,5 +120,4 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
         UApiClient::SetResponseText(*Response->GetContentAsString());
     }
 }
-
 
