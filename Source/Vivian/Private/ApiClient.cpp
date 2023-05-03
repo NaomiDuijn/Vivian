@@ -13,14 +13,17 @@ void UApiClient::SetResponseText(FString Response)
     UE_LOG(LogTemp, Display, TEXT("Set text to: %s"), *Response);
 }
 
+// Make an API request
 void UApiClient::MakeAPIRequest()
 {
     // Create a new HTTP request object
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http-> CreateRequest();
     FText InputFieldText = ApiTextInput->GetText();
     InputText = InputFieldText.ToString();
+
     // Set the callback function to handle the response
     Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::HandleAPIResponse);
+
     // Set the URL of the API endpoint you want to call
     FString URL = "https://api.openai.com/v1/chat/completions";
     Request->SetURL(URL);
@@ -41,11 +44,12 @@ void UApiClient::MakeAPIRequest()
 
     // Create a new JSON array for the "messages" key-value pair
     TArray<TSharedPtr<FJsonValue>> MessagesArray;
-
     TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
+
     MessageObject->SetStringField("role", "user");
     MessageObject->SetStringField("content", InputText);
     MessagesArray.Add(MakeShareable(new FJsonValueObject(MessageObject)));
+
     // Add the JSON array to the JSON object
     JsonObject->SetArrayField("messages", MessagesArray);
 
@@ -53,6 +57,7 @@ void UApiClient::MakeAPIRequest()
     FString JsonString;
     TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
     FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
+    
     // Set the content of the request
     Request->SetContent(TArray<uint8>((const uint8*)TCHAR_TO_UTF8(*JsonString), JsonString.Len()));
 
@@ -112,11 +117,9 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
     }
     else
     {
-        // Handle any errors or exceptions that occurred during the API call
-        // ...
-
         // Print the error message to the console for debugging
         UE_LOG(LogTemp, Error, TEXT("API request failed: %s"), *Response->GetContentAsString());
+        // Set the response text to the error message
         UApiClient::SetResponseText(*Response->GetContentAsString());
     }
 }

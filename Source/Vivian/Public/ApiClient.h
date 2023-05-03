@@ -10,9 +10,6 @@
 #include <Components/EditableTextBox.h>
 #include "ApiClient.generated.h"
 
-/**
- * 
- */
 // Use the Game config file to read the API key
 UCLASS(Config=Game)
 class VIVIAN_API UApiClient : public UUserWidget
@@ -30,11 +27,10 @@ public:
         UEditableTextBox* ApiTextInput;
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
         UMultiLineEditableTextBox* ApiTextOutput;
-protected:
 
+protected:
     // Call the Api 
     void HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
-
 
 private:
     FHttpModule* Http;
