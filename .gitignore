@@ -73,10 +73,5 @@ Plugins/*/Intermediate/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
-# No assets/config
-Content/*
-Config/*
-Platforms/*
-
 # No notes
 Notes.md
