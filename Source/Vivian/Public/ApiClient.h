@@ -41,6 +41,6 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Private", meta= (AllowPrivateAccess = "true"))
     FString InputText;
     // Read the API key from the config file
-    UPROPERTY(Config)
-    FString ApiKey;
+    UPROPERTY(VisibleAnywhere, Config)
+        FString ApiKey;
 };
