@@ -44,8 +44,15 @@ void UApiClient::MakeAPIRequest()
 
     // Create a new JSON array for the "messages" key-value pair
     TArray<TSharedPtr<FJsonValue>> MessagesArray;
-    TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
 
+    // Message object with the base conversation context
+    TSharedPtr<FJsonObject> BaseConversationContextMessageObject = MakeShareable(new FJsonObject);
+    BaseConversationContextMessageObject->SetStringField("role", "system");
+    BaseConversationContextMessageObject->SetStringField("content", BaseConversationContext);
+    MessagesArray.Add(MakeShareable(new FJsonValueObject(BaseConversationContextMessageObject)));
+
+    // Message object with the user input
+    TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
     MessageObject->SetStringField("role", "user");
     MessageObject->SetStringField("content", InputText);
     MessagesArray.Add(MakeShareable(new FJsonValueObject(MessageObject)));
