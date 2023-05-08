@@ -39,4 +39,6 @@ private:
     // Read the API key from the config file
     UPROPERTY(VisibleAnywhere, Config)
         FString ApiKey;
+    UPROPERTY(VisibleAnywhere, Config)
+        FString BaseConversationContext;
 };
