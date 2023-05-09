@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "Runtime/Online/HTTP/Public/Http.h"
+#include "Http.h"
+#include "HttpModule.h"
 #include "Runtime/UMG/Public/Components/Button.h"
+#include "Sound/SoundWave.h"
 #include <Components/MultiLineEditableTextBox.h>
 #include <Components/EditableTextBox.h>
 #include "ApiClient.generated.h"
@@ -23,6 +25,9 @@ public:
         void MakeAPIRequest();
     UFUNCTION(BlueprintCallable)
         void SetResponseText(FString Response);
+    FString AddData(FString Name, FString Value);
+    UFUNCTION(BlueprintCallable)
+        void SendAudioToOpenAI();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget))
         UEditableTextBox* ApiTextInput;
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
@@ -31,6 +36,7 @@ public:
 protected:
     // Call the Api 
     void HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
+    void OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
 
 private:
     FHttpModule* Http;
@@ -41,4 +47,8 @@ private:
         FString ApiKey;
     UPROPERTY(VisibleAnywhere, Config)
         FString BaseConversationContext;
+
+    FString BoundaryLabel = FString();
+    FString BoundaryBegin = FString();
+    FString BoundaryEnd = FString();
 };

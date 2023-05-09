@@ -131,3 +131,85 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
     }
 }
 
+// Add data to a multipart form
+FString UApiClient::AddData(FString Name, FString Value) {
+    return FString(TEXT("\r\n"))
+        + BoundaryBegin
+        + FString(TEXT("Content-Disposition: form-data; name=\""))
+        + Name
+        + FString(TEXT("\"\r\n\r\n"))
+        + Value;
+}
+void UApiClient::SendAudioToOpenAI()
+{
+    // Create a new HTTP request object
+    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
+
+    // Set the URL of the API endpoint you want to call
+    FString URL = "https://api.openai.com/v1/audio/transcriptions";
+    Request->SetURL(URL);
+
+    // Set the HTTP verb (such as GET, POST, PUT, DELETE)
+    Request->SetVerb("POST");
+
+    // Create a boundary label, for the header
+    BoundaryLabel = FString(TEXT("e543322540af456f9a3773049ca02529-")) + FString::FromInt(FMath::Rand());
+    // boundary label for begining of every payload chunk 
+    BoundaryBegin = FString(TEXT("--")) + BoundaryLabel + FString(TEXT("\r\n"));
+    // boundary label for the end of payload
+    BoundaryEnd = FString(TEXT("\r\n--")) + BoundaryLabel + FString(TEXT("--\r\n"));
+
+    // Set any headers or parameters needed for the request
+    Request->SetHeader("User-Agent", "X-UnrealEngine-Agent");
+    Request->SetHeader("Authorization", "Bearer " + ApiKey);
+    // Set the content type of the request with the boundary label
+    Request->SetHeader(TEXT("Content-Type"), FString(TEXT("multipart/form-data; boundary=")) + BoundaryLabel);
+    // Set the file path
+    FString FilePath = FPaths::ProjectContentDir() + TEXT("AudioFiles/TestAudio.mp3");
+
+    // Create the multipart/form-data content
+    TArray<uint8> CombinedContent;
+    TArray<uint8> FileRawData;
+        //FFileHelper::LoadFileToArray(Data, *FilePath);
+    if (!FFileHelper::LoadFileToArray(FileRawData, *FilePath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to load file: %s"), *FilePath);
+        return;
+    }
+    // Get the file name and content type
+    FString FileName = FPaths::GetCleanFilename(FilePath);
+    FString ContentType = TEXT("audio/mpeg");
+
+    // First, we add the boundary for the file, which is different from text payload
+    FString FileBoundaryString = FString(TEXT("\r\n"))
+        + BoundaryBegin
+        + FString(TEXT("Content-Disposition: form-data; name=\"file\"; filename=\""))
+        + FileName + "\"\r\n"
+        + "Content-Type: " + ContentType
+        + FString(TEXT("\r\n\r\n"));
+    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*FileBoundaryString), FileBoundaryString.Len());
+    // Then we add the actual file data
+    CombinedContent.Append(FileRawData);
+    // Then we add the boundary for the text payload with the model information
+    FString ExtraData = AddData("model", "whisper-1");
+    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*ExtraData), ExtraData.Len());
+    // Lastly, we add the closing boundary
+    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*BoundaryEnd), BoundaryEnd.Len());
+    // Add the content to the request
+    Request->SetContent(CombinedContent);
+    // Send the request
+    Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::OnTranscriptionComplete);
+    Request->ProcessRequest();
+}
+
+void UApiClient::OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
+{
+    if (!bSuccess || !Response.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to transcribe audio"));
+        return;
+    }
+
+    FString ResponseText = Response->GetContentAsString();
+    UE_LOG(LogTemp, Log, TEXT("Transcription response: %s"), *ResponseText);
+}
