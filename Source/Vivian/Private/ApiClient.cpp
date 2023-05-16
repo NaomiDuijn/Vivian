@@ -7,37 +7,35 @@ UApiClient::UApiClient(const FObjectInitializer& ObjectInitializer)
     Http = &FHttpModule::Get();
 }
 
-void UApiClient::SetResponseText(FString Response)
+void UApiClient::SetResponseText(const FString& Response)
 {
     ApiTextOutput->SetText(FText::FromString(Response));
-    UE_LOG(LogTemp, Display, TEXT("Set text to: %s"), *Response);
+    UE_LOG(LogTemp, Display, TEXT("Set responsetext to: %s"), *Response);
 }
 
 // Make an API request
-void UApiClient::MakeAPIRequest()
+void UApiClient::SendOpenAIChatRequest(const FString& InputText)
 {
     // Create a new HTTP request object
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http-> CreateRequest();
-    FText InputFieldText = ApiTextInput->GetText();
-    InputText = InputFieldText.ToString();
+    const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http-> CreateRequest();
 
     // Set the callback function to handle the response
     Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::HandleAPIResponse);
 
-    // Set the URL of the API endpoint you want to call
-    FString URL = "https://api.openai.com/v1/chat/completions";
+    // Set the URL
+    const FString URL = "https://api.openai.com/v1/chat/completions";
     Request->SetURL(URL);
 
     // Set the HTTP verb (such as GET, POST, PUT, DELETE)
     Request->SetVerb("POST");
 
-    // Set any headers or parameters needed for the request
+    // Set headers needed for the request
     Request->SetHeader("User-Agent", "X-UnrealEngine-Agent");
     Request->SetHeader("Content-Type", "application/json"); //;q=0.9,text/plain
     Request->SetHeader("Authorization", "Bearer " + ApiKey);
 
     // create a JSON object
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+    const TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 
     // Add the "model" key-value pair to the JSON object
     JsonObject->SetStringField("model", "gpt-3.5-turbo");
@@ -46,13 +44,13 @@ void UApiClient::MakeAPIRequest()
     TArray<TSharedPtr<FJsonValue>> MessagesArray;
 
     // Message object with the base conversation context
-    TSharedPtr<FJsonObject> BaseConversationContextMessageObject = MakeShareable(new FJsonObject);
+    const TSharedPtr<FJsonObject> BaseConversationContextMessageObject = MakeShareable(new FJsonObject);
     BaseConversationContextMessageObject->SetStringField("role", "system");
     BaseConversationContextMessageObject->SetStringField("content", BaseConversationContext);
     MessagesArray.Add(MakeShareable(new FJsonValueObject(BaseConversationContextMessageObject)));
 
     // Message object with the user input
-    TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
+    const TSharedPtr<FJsonObject> MessageObject = MakeShareable(new FJsonObject);
     MessageObject->SetStringField("role", "user");
     MessageObject->SetStringField("content", InputText);
     MessagesArray.Add(MakeShareable(new FJsonValueObject(MessageObject)));
@@ -62,11 +60,11 @@ void UApiClient::MakeAPIRequest()
 
     // convert the JSON object to a string
     FString JsonString;
-    TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+    const TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
     FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
     
     // Set the content of the request
-    Request->SetContent(TArray<uint8>((const uint8*)TCHAR_TO_UTF8(*JsonString), JsonString.Len()));
+    Request->SetContent(TArray(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*JsonString)), JsonString.Len()));
 
     // Send the HTTP request
     Request->ProcessRequest();
@@ -79,20 +77,20 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
     if (bSuccess && Response.IsValid() && Response->GetResponseCode() == EHttpResponseCodes::Ok)
     {
         // Get the response body as a string
-        FString ResponseBody = Response->GetContentAsString();
+        const FString ResponseBody = Response->GetContentAsString();
 
         // Create a new Json Object
         TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 
         // Create a reader for the response body
-        TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(ResponseBody);
+        const TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(ResponseBody);
 
         // Check if reading is succesful
         if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
         {
             // Log the JSON object as a string
             FString JsonObjectString;
-            TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonObjectString);
+            const TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonObjectString);
             FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
 
             // Extract the "choices" array from the JSON object
@@ -101,17 +99,16 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
             // Check if the "choices" key exists in the JSON object
             if (JsonObject->TryGetArrayField("choices", ChoicesArray) && ChoicesArray->Num() > 0)
             {
-                TSharedPtr<FJsonObject> FirstChoiceObject = (*ChoicesArray)[0]->AsObject();
-                TSharedPtr<FJsonObject> MessageObject = FirstChoiceObject->GetObjectField("message");
+                const TSharedPtr<FJsonObject> FirstChoiceObject = (*ChoicesArray)[0]->AsObject();
+                const TSharedPtr<FJsonObject> MessageObject = FirstChoiceObject->GetObjectField("message");
 
-                FString Role;
-                FString Content;
                 // Check if the "role" and "content" keys exist in the JSON object
-                if (MessageObject->TryGetStringField("role", Role) && MessageObject->TryGetStringField("content", Content))
+                if (FString Role, Content; MessageObject->TryGetStringField("role", Role) && MessageObject->
+                    TryGetStringField("content", Content))
                 {
                     UE_LOG(LogTemp, Display, TEXT("Role: %s, Content: %s"), *Role, *Content);
                     // Set the response text to the "content" value
-                    UApiClient::SetResponseText(Content);
+                    SetResponseText(Content);
                 }
             }
             // If the "choices" key does not exist in the JSON object
@@ -119,7 +116,6 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
             {
                 UE_LOG(LogTemp, Warning, TEXT("No choices array found"));
             }
-
         }
     }
     else
@@ -127,12 +123,11 @@ void UApiClient::HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Res
         // Print the error message to the console for debugging
         UE_LOG(LogTemp, Error, TEXT("API request failed: %s"), *Response->GetContentAsString());
         // Set the response text to the error message
-        UApiClient::SetResponseText(*Response->GetContentAsString());
+        SetResponseText(*Response->GetContentAsString());
     }
 }
 
-// Add data to a multipart form
-FString UApiClient::AddData(FString Name, FString Value) {
+FString UApiClient::AddStringValueToMultipartFormData(FString Name, FString Value) {
     return FString(TEXT("\r\n"))
         + BoundaryBegin
         + FString(TEXT("Content-Disposition: form-data; name=\""))
@@ -140,13 +135,14 @@ FString UApiClient::AddData(FString Name, FString Value) {
         + FString(TEXT("\"\r\n\r\n"))
         + Value;
 }
+
 void UApiClient::SendAudioToOpenAI()
 {
     // Create a new HTTP request object
-    TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
+    const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
 
-    // Set the URL of the API endpoint you want to call
-    FString URL = "https://api.openai.com/v1/audio/transcriptions";
+    // Set the URL
+    const FString URL = "https://api.openai.com/v1/audio/transcriptions";
     Request->SetURL(URL);
 
     // Set the HTTP verb (such as GET, POST, PUT, DELETE)
@@ -154,48 +150,50 @@ void UApiClient::SendAudioToOpenAI()
 
     // Create a boundary label, for the header
     BoundaryLabel = FString(TEXT("e543322540af456f9a3773049ca02529-")) + FString::FromInt(FMath::Rand());
-    // boundary label for begining of every payload chunk 
+    // Boundary label for beginning of every payload chunk 
     BoundaryBegin = FString(TEXT("--")) + BoundaryLabel + FString(TEXT("\r\n"));
-    // boundary label for the end of payload
+    // Boundary label for the end of payload
     BoundaryEnd = FString(TEXT("\r\n--")) + BoundaryLabel + FString(TEXT("--\r\n"));
 
-    // Set any headers or parameters needed for the request
+    // Set headers or parameters needed for the request
     Request->SetHeader("User-Agent", "X-UnrealEngine-Agent");
     Request->SetHeader("Authorization", "Bearer " + ApiKey);
     // Set the content type of the request with the boundary label
     Request->SetHeader(TEXT("Content-Type"), FString(TEXT("multipart/form-data; boundary=")) + BoundaryLabel);
     // Set the file path
-    FString FilePath = FPaths::ProjectContentDir() + TEXT("AudioFiles/TestAudio.mp3");
+    const FString FilePath = FPaths::ProjectSavedDir() + TEXT("BouncedWavFiles/UserRecording.wav");
 
     // Create the multipart/form-data content
     TArray<uint8> CombinedContent;
     TArray<uint8> FileRawData;
-        //FFileHelper::LoadFileToArray(Data, *FilePath);
     if (!FFileHelper::LoadFileToArray(FileRawData, *FilePath))
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to load file: %s"), *FilePath);
         return;
     }
     // Get the file name and content type
-    FString FileName = FPaths::GetCleanFilename(FilePath);
-    FString ContentType = TEXT("audio/mpeg");
+    const FString FileName = FPaths::GetCleanFilename(FilePath);
+    const FString ContentType = TEXT("audio/wav");
 
-    // First, we add the boundary for the file, which is different from text payload
-    FString FileBoundaryString = FString(TEXT("\r\n"))
+    // Add the boundary for the file to the CombinedContent, which is different from text payload
+    const FString FileBoundaryString = FString(TEXT("\r\n"))
         + BoundaryBegin
         + FString(TEXT("Content-Disposition: form-data; name=\"file\"; filename=\""))
         + FileName + "\"\r\n"
         + "Content-Type: " + ContentType
         + FString(TEXT("\r\n\r\n"));
-    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*FileBoundaryString), FileBoundaryString.Len());
-    // Then we add the actual file data
+    CombinedContent.Append(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*FileBoundaryString)), FileBoundaryString.Len());
+    // Add the actual file data
     CombinedContent.Append(FileRawData);
-    // Then we add the boundary for the text payload with the model information
-    FString ExtraData = AddData("model", "whisper-1");
-    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*ExtraData), ExtraData.Len());
-    // Lastly, we add the closing boundary
-    CombinedContent.Append((const uint8*)TCHAR_TO_UTF8(*BoundaryEnd), BoundaryEnd.Len());
-    // Add the content to the request
+    // Add the boundary for the text payload with the model information
+    const FString ModelData = AddStringValueToMultipartFormData("model", "whisper-1");
+    CombinedContent.Append(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*ModelData)), ModelData.Len());
+    // Add the boundary for the text payload with the language information
+    const FString LangData = AddStringValueToMultipartFormData("language", "nl");
+    CombinedContent.Append(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*LangData)), LangData.Len());
+    // Add the closing boundary
+    CombinedContent.Append(reinterpret_cast<const uint8*>(TCHAR_TO_UTF8(*BoundaryEnd)), BoundaryEnd.Len());
+    // Set the content for the request
     Request->SetContent(CombinedContent);
     // Send the request
     Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::OnTranscriptionComplete);
@@ -209,7 +207,25 @@ void UApiClient::OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponseP
         UE_LOG(LogTemp, Error, TEXT("Failed to transcribe audio"));
         return;
     }
-
-    FString ResponseText = Response->GetContentAsString();
+    // Print the response to the console for debugging
+    const FString ResponseText = Response->GetContentAsString();
     UE_LOG(LogTemp, Log, TEXT("Transcription response: %s"), *ResponseText);
+    
+    // Deserialize the JSON response
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+    if (const TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(ResponseText); FJsonSerializer::Deserialize(JsonReader, JsonObject))
+    {
+        if (FString Transcription; JsonObject->TryGetStringField("text", Transcription))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Transcription: %s"), *Transcription);
+            // Check if the transcription is empty
+            if (Transcription.IsEmpty())
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Transcription is empty"));
+                return;
+            }
+            // Send the input text to the OpenAI API
+            SendOpenAIChatRequest(Transcription);
+        }
+    }
 }
