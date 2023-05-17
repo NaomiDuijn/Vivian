@@ -17,10 +17,9 @@ public:
 	float GetMicSensitivity() const;
 
 	UFUNCTION(BlueprintCallable)
-	static UUserSettings* GetBetterGameUserSettings();
-	
-	UPROPERTY(Config, BlueprintReadWrite)
-	float MicSensitivity;
+	static UUserSettings* GetVivianGameUserSettings();
 
 protected:
+	UPROPERTY(Config)
+	float MicSensitivity;
 };
