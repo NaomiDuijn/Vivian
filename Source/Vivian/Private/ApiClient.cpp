@@ -23,8 +23,7 @@ void UApiClient::SendOpenAIChatRequest(const FString& InputText)
     Request->OnProcessRequestComplete().BindUObject(this, &UApiClient::HandleAPIResponse);
 
     // Set the URL
-    const FString URL = "https://api.openai.com/v1/chat/completions";
-    Request->SetURL(URL);
+    Request->SetURL(ChatApiUrl);
 
     // Set the HTTP verb (such as GET, POST, PUT, DELETE)
     Request->SetVerb("POST");
@@ -142,12 +141,12 @@ void UApiClient::SendAudioToOpenAI()
     const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
 
     // Set the URL
-    const FString URL = "https://api.openai.com/v1/audio/transcriptions";
-    Request->SetURL(URL);
+    Request->SetURL(TranscriptionApiUrl);
 
     // Set the HTTP verb (such as GET, POST, PUT, DELETE)
     Request->SetVerb("POST");
-
+    
+    // Explanation of a boundary label: https://roytuts.com/boundary-in-multipart-form-data/
     // Create a boundary label, for the header
     BoundaryLabel = FString(TEXT("e543322540af456f9a3773049ca02529-")) + FString::FromInt(FMath::Rand());
     // Boundary label for beginning of every payload chunk 

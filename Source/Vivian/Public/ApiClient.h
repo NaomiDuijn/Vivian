@@ -41,6 +41,12 @@ private:
     // Read the base conversation context from the config file
     UPROPERTY(VisibleAnywhere, Config)
         FString BaseConversationContext;
+    // Read the Chat API URL from the config file
+    UPROPERTY(VisibleAnywhere, Config)
+    FString ChatApiUrl;
+    // Read the Transcription API URL from the config file
+    UPROPERTY(VisibleAnywhere, Config)
+    FString TranscriptionApiUrl;
     // Boundary FStrings for setting up the multipart form data
     FString BoundaryLabel = FString();
     FString BoundaryBegin = FString();
