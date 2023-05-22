@@ -7,8 +7,15 @@ UApiClient::UApiClient(const FObjectInitializer& ObjectInitializer)
     Http = &FHttpModule::Get();
 }
 
+FString UApiClient::GetResponseText() const
+{
+    return ResponseText;
+}
+
 void UApiClient::SetResponseText(const FString& Response)
 {
+    ResponseText = Response;
+    OnResponseProcessed.Broadcast();
     ApiTextOutput->SetText(FText::FromString(Response));
     UE_LOG(LogTemp, Display, TEXT("Set responsetext to: %s"), *Response);
 }
@@ -207,12 +214,12 @@ void UApiClient::OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponseP
         return;
     }
     // Print the response to the console for debugging
-    const FString ResponseText = Response->GetContentAsString();
-    UE_LOG(LogTemp, Log, TEXT("Transcription response: %s"), *ResponseText);
+    const FString TranscriptionResponseText = Response->GetContentAsString();
+    UE_LOG(LogTemp, Log, TEXT("Transcription response: %s"), *TranscriptionResponseText);
     
     // Deserialize the JSON response
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
-    if (const TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(ResponseText); FJsonSerializer::Deserialize(JsonReader, JsonObject))
+    if (const TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<TCHAR>::Create(TranscriptionResponseText); FJsonSerializer::Deserialize(JsonReader, JsonObject))
     {
         if (FString Transcription; JsonObject->TryGetStringField("text", Transcription))
         {

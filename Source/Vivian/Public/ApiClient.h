@@ -10,6 +10,8 @@
 #include <Components/MultiLineEditableTextBox.h>
 #include "ApiClient.generated.h"
 
+// Declare a delegate type for processing the response
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FResponseProcessed);
 // Use the Game config file to read the API key and base conversation context
 UCLASS(Config=Game)
 class VIVIAN_API UApiClient : public UUserWidget
@@ -19,17 +21,20 @@ class VIVIAN_API UApiClient : public UUserWidget
 public:
     UApiClient(const FObjectInitializer& ObjectInitializer);
 
+    // Return the response text
     UFUNCTION(BlueprintCallable)
-        void SendOpenAIChatRequest(const FString& InputText);
+        FString GetResponseText() const;
     UFUNCTION(BlueprintCallable)
         void SendAudioToOpenAI();
-    
-    void SetResponseText(const FString& Response);
+    // Custom event to be called when the response text is ready
+    UPROPERTY(BlueprintAssignable)
+    FResponseProcessed OnResponseProcessed;
     // The response text box in the UI
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
         UMultiLineEditableTextBox* ApiTextOutput;
     
 protected:
+    void SendOpenAIChatRequest(const FString& InputText);
     void HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
     void OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
 
@@ -53,4 +58,8 @@ private:
     FString BoundaryEnd = FString();
     // Method to add data to the request
     FString AddStringValueToMultipartFormData(FString Name, FString Value);
+    // Response text variable
+    FString ResponseText;
+    // Method to set the response text
+    void SetResponseText(const FString& Response);
 };
