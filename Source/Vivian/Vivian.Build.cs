@@ -4,11 +4,15 @@ using UnrealBuildTool;
 
 public class Vivian : ModuleRules
 {
-	public Vivian(ReadOnlyTargetRules Target) : base(Target)
+	public Vivian(ReadOnlyTargetRules target) : base(target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HTTP", "Json", "JsonUtilities", "UMG" });
+		PublicDependencyModuleNames.AddRange(new []
+		{
+			"Core", "CoreUObject", "Engine", "InputCore", "HTTP", "Json", "JsonUtilities", "UMG", "Voice",
+			"AudioCapture", "AudioMixer"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
