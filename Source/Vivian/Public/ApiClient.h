@@ -32,6 +32,9 @@ public:
     // The response text box in the UI
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
         UMultiLineEditableTextBox* ApiTextOutput;
+    // Loading spinner in the UI
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
+        UWidget* LoadingSpinner;
     
 protected:
     void SendOpenAIChatRequest(const FString& InputText);

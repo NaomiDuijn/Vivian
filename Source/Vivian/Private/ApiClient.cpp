@@ -14,6 +14,8 @@ FString UApiClient::GetResponseText() const
 
 void UApiClient::SetResponseText(const FString& Response)
 {
+    // Let the user know that it's done loading
+    LoadingSpinner->SetVisibility(ESlateVisibility::Collapsed);
     ResponseText = Response;
     OnResponseProcessed.Broadcast();
     ApiTextOutput->SetText(FText::FromString(Response));
@@ -144,6 +146,8 @@ FString UApiClient::AddStringValueToMultipartFormData(FString Name, FString Valu
 
 void UApiClient::SendAudioToOpenAI()
 {
+    // Let the user know that it's loading
+    LoadingSpinner->SetVisibility(ESlateVisibility::Visible);
     // Create a new HTTP request object
     const TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
 
