@@ -47,15 +47,16 @@ void AVivianGameModeBase::SetResponseText(const FString& ResponseText)
 	// Broadcast the event
 	OnSetNewResponseText.Broadcast();
 }
+
 // Call the api client to SendAudioToOpenAI and then call the api client to SendOpenAIChatRequest
 void AVivianGameModeBase::Transcribe() const
 {
-	// IMainInterfaceInteraction *MainInterface = GetGameState<AVivianGameState>()->MainInterface->Construct();
 	GetGameState<AVivianGameState>()->GetMainInterface()->SetLoadingSpinnerVisibility(true);
 	GetGameState<AVivianGameState>()->GetMainInterface()->SetTextOutput("");
 	// Call the api client to SendAudioToOpenAI
 	TranscriptionApiClient->SendAudioToOpenAI();
 }
+
 void AVivianGameModeBase::Chat(const FString& InputText)
 {
 	// Log the response to the console

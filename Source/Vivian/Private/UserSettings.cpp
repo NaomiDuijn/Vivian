@@ -7,7 +7,6 @@ UUserSettings::UUserSettings(const FObjectInitializer& ObjectInitializer):Super(
 	{
 		MicSensitivity = 0.1f;
 	}
-	
 }
 
 void UUserSettings::SetMicSensitivity(float NewValue)
