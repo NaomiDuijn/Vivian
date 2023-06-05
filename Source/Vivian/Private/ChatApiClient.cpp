@@ -11,7 +11,6 @@ UChatApiClient::UChatApiClient(const FObjectInitializer& ObjectInitializer)
     Http = &FHttpModule::Get();
 }
 
-
 // Make an API request
 void UChatApiClient::SendOpenAIChatRequest(const FString& InputText)
 {

@@ -22,8 +22,10 @@ public:
 	// Custom event to be called when the response text is ready
 	UPROPERTY(BlueprintAssignable)
 	FTranscriptionResponseProcessed OnTranscriptionResponseProcessed;
+
 protected:
 	void OnTranscriptionComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
+
 private:
 	FHttpModule* Http;
 	// Read the API key from the config file

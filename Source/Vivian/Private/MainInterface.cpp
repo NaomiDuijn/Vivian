@@ -7,6 +7,7 @@
 UMainInterface::UMainInterface(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {}
+
 // Set TextOutput to new text
 void UMainInterface::SetTextOutput(const FString& NewText)
 {

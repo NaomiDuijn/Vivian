@@ -21,8 +21,10 @@ public:
 	// Custom event to be called when the response text is ready
 	UPROPERTY(BlueprintAssignable)
 	FChatResponseProcessed OnChatResponseProcessed;
+
 protected:
 	void HandleAPIResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess);
+
 private:
 	FHttpModule* Http;
 	// Read the API key from the config file
