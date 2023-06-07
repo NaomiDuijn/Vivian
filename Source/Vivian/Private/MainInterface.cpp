@@ -22,3 +22,12 @@ void UMainInterface::SetLoadingSpinnerVisibility(const bool bVisible)
 	else
 		LoadingSpinner->SetVisibility(ESlateVisibility::Collapsed);
 }
+
+// Set LoadingSpinner visibility
+void UMainInterface::SetUserInputIndicatorVisibility(const bool bVisible)
+{
+	if(bVisible)
+		UserInputIndicator->SetVisibility(ESlateVisibility::Visible);
+	else
+		UserInputIndicator->SetVisibility(ESlateVisibility::Collapsed);
+}

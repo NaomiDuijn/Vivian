@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include <Components/MultiLineEditableTextBox.h>
+#include <Components/TextBlock.h>
 
 #include "MainInterface.generated.h"
 
@@ -21,10 +22,16 @@ public:
 	// Loading spinner in the UI
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
 	UWidget* LoadingSpinner;
+	// User input indicator in the UI
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* UserInputIndicator;
 	// Set TextOutput
 	UFUNCTION(BlueprintCallable)
-	void SetTextOutput(const FString& NewText) ;
+	void SetTextOutput(const FString& NewText);
 	// Set LoadingSpinner
 	UFUNCTION(BlueprintCallable)
-	void SetLoadingSpinnerVisibility(bool bVisible) ;
+	void SetLoadingSpinnerVisibility(bool bVisible);
+	// Set UserInputIndicator
+	UFUNCTION(BlueprintCallable)
+	void SetUserInputIndicatorVisibility(bool bVisible);
 };
